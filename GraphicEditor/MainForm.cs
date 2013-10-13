@@ -26,6 +26,7 @@ namespace GraphicEditor
         private Color figure_color;
         private Color canvas_color;
         private Bitmap buf;
+        private byte[] bufByte;
         Graphics gbuf;
         Graphics canvas;
 
@@ -61,7 +62,12 @@ namespace GraphicEditor
             creator = new Creator();
             OffOn = false; 
             DoubleBuffered = true;
-            buf = new Bitmap(draw_panel.Width, draw_panel.Height); 
+            buf = new Bitmap(draw_panel.Width, draw_panel.Height);
+
+            MemoryStream ms = new MemoryStream();
+            buf.Save(ms, ImageFormat.Bmp);
+            bufByte = ms.ToArray();
+
             figures = new List<IFigures>();
             all_types = new List<string>();
             assemblyFileNames = new List<string>();
@@ -85,16 +91,9 @@ namespace GraphicEditor
                 if (current_object == null)
                     current_object = CreateInstance(GetFigureIndex(current_figure_id));
                 current_object.First_point = new Point(e.X, e.Y);
-                //current_object.Last_point = new Point(200, 300);
                 current_object.Widht = draw_panel.Width;
                 current_object.Height = draw_panel.Height;
-                OffOn = true;
-                
-                /*current_object.Draw(Color.AntiqueWhite,Color.AliceBlue, buf, figures);
-                MemoryStream ms2 = new MemoryStream(current_object.Buffer_Main);
-                Image retBuf = Bitmap.FromStream(ms2);
-                canvas.DrawImageUnscaled(retBuf,0,0,buf.Width,buf.Height);*/
-                            
+                OffOn = true;                            
             }
         }
 
@@ -102,17 +101,19 @@ namespace GraphicEditor
         {
             if (current_object != null)
             {
-               /* Point temp = current_object.Last_point;
-                temp.X = e.X;
-                temp.Y = e.Y;
-                //current_object.Last_point.X = e.X;
-                //current_object.Last_point.Y = e.Y;
-                current_object.Last_point = temp;*/
                 current_object.Last_point = new Point(e.X,e.Y);
                 if (OffOn)
                 {
-                    current_object.Draw(figure_color, canvas_color, buf, figures);
-                    MemoryStream ms2 = new MemoryStream(current_object.Buffer_Main);
+                    gbuf = Graphics.FromImage(buf);
+                    gbuf.Clear(canvas_color);
+                    MemoryStream ms = new MemoryStream();
+                    buf.Save(ms, ImageFormat.Bmp);
+                    bufByte = ms.ToArray();
+
+                    foreach(IFigures figure in figures)
+                        bufByte = figure.Draw(figure_color, canvas_color, bufByte, figures);
+                    
+                    MemoryStream ms2 = new MemoryStream(current_object.Draw(figure_color, canvas_color, bufByte, figures));
                     Image retBuf = Bitmap.FromStream(ms2);
                     canvas.DrawImageUnscaled(retBuf, 0, 0, buf.Width, buf.Height);
                 }
@@ -124,12 +125,11 @@ namespace GraphicEditor
             if (current_object != null)
             {
                 OffOn = false;
-                current_object.Draw(figure_color, canvas_color, buf, figures);
-                MemoryStream ms2 = new MemoryStream(current_object.Buffer_Main);
+
+                MemoryStream ms2 = new MemoryStream(current_object.Draw(figure_color, canvas_color, bufByte, figures));
                 Image retBuf = Bitmap.FromStream(ms2);
                 canvas.DrawImageUnscaled(retBuf, 0, 0, buf.Width, buf.Height);
-                // current_object.Draw(figure_color, canvas_color,  buf,figures);
-                //all_figures.Add(new figure_frame(current_figure_id,current_object.First_point,current_object.Last_point));
+
                 figures.Add(current_object);
                 current_object = null;
             }
@@ -238,12 +238,6 @@ namespace GraphicEditor
         private void MainForm_Load(object sender, EventArgs e)
         {
             LoadDLL();
-            /*System.Runtime.Remoting.ObjectHandle handle;
-            object[] args = {draw_panel};
-            handle = domain.CreateInstanceFrom(assemblyFileNames[0],all_types[0] , true, 0, null, args, null, null);
-            object obj = handle.Unwrap();
-            IFigures figure = (IFigures)obj;
-            figure.Draw();*/
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -286,7 +280,7 @@ namespace GraphicEditor
                         //current_object = creator.CreateFigure(draw_panel, figure.Id);
                         current_object.First_point = figure.First_Point;
                         current_object.Last_point = figure.Last_Point;                        
-                        current_object.Draw(figure_color, canvas_color, buf, figures);
+                        current_object.Draw(figure_color, canvas_color, bufByte, figures);
                         figures.Add(current_object);
                         all_figures.Add(new figure_frame(figure.Id, current_object.First_point, current_object.Last_point));
                         current_object = null;
