@@ -1,0 +1,17 @@
+C:\Users\Anna\AppData\Local\Temporary Projects\GraphicEditor\bin\Debug\GraphicEditor.exe
+C:\Users\Anna\AppData\Local\Temporary Projects\GraphicEditor\bin\Debug\GraphicEditor.pdb
+C:\Users\Anna\AppData\Local\Temporary Projects\GraphicEditor\obj\x86\Debug\GraphicEditor.Properties.Resources.resources
+C:\Users\Anna\AppData\Local\Temporary Projects\GraphicEditor\obj\x86\Debug\GraphicEditor.csproj.GenerateResource.Cache
+C:\Users\Anna\AppData\Local\Temporary Projects\GraphicEditor\obj\x86\Debug\GraphicEditor.exe
+C:\Users\Anna\AppData\Local\Temporary Projects\GraphicEditor\obj\x86\Debug\GraphicEditor.pdb
+C:\Users\Anna\AppData\Local\Temporary Projects\GraphicEditor\obj\x86\Debug\GraphicEditor.MainForm.resources
+D:\Project c#\GraphicEditor\GraphicEditor\obj\x86\Debug\GraphicEditor.exe
+D:\Project c#\GraphicEditor\GraphicEditor\obj\x86\Debug\GraphicEditor.pdb
+D:\Project c#\GraphicEditor\GraphicEditor\bin\Debug\GraphicEditor.exe
+D:\Project c#\GraphicEditor\GraphicEditor\bin\Debug\GraphicEditor.pdb
+D:\Project c#\GraphicEditor\GraphicEditor\obj\x86\Debug\GraphicEditor.MainForm.resources
+D:\Project c#\GraphicEditor\GraphicEditor\obj\x86\Debug\GraphicEditor.Properties.Resources.resources
+D:\Project c#\GraphicEditor\GraphicEditor\obj\x86\Debug\GraphicEditor.csproj.GenerateResource.Cache
+D:\Project c#\GraphicEditor\GraphicEditor\obj\x86\Debug\GraphicEditor.csprojResolveAssemblyReference.cache
+D:\Project c#\GraphicEditor\GraphicEditor\bin\Debug\Figures.dll
+D:\Project c#\GraphicEditor\GraphicEditor\bin\Debug\Figures.pdb
