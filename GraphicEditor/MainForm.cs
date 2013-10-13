@@ -27,6 +27,8 @@ namespace GraphicEditor
         private Color canvas_color;
         private Bitmap buf;
         Graphics gbuf;
+        Graphics canvas;
+
 
         private List<string> all_types;
         private List<string> new_all_figures;
@@ -63,6 +65,8 @@ namespace GraphicEditor
             figures = new List<IFigures>();
             all_types = new List<string>();
             assemblyFileNames = new List<string>();
+
+            canvas = draw_panel.CreateGraphics();
             
         }
 
@@ -79,36 +83,55 @@ namespace GraphicEditor
 
                 current_figure_id = cb_figure.Text;
                 if (current_object == null)
-                    //current_object = creator.CreateFigure(draw_panel, cb_figure.Text);
                     current_object = CreateInstance(GetFigureIndex(current_figure_id));
-                current_object.First_point = new Point(50, 60);
-                current_object.Last_point = new Point(200, 300);
+                current_object.First_point = new Point(e.X, e.Y);
+                //current_object.Last_point = new Point(200, 300);
                 current_object.Widht = draw_panel.Width;
                 current_object.Height = draw_panel.Height;
-                Graphics canvas = draw_panel.CreateGraphics();
-                /*Bitmap buf = new Bitmap(current_object.Widht,current_object.Height);
-                Graphics gbuf = Graphics.FromImage(buf);
-                Pen pen = new Pen(Color.AliceBlue, 3);
-                gbuf.DrawLine(pen,current_object.First_point,current_object.Last_point);
-
-                MemoryStream ms = new MemoryStream();
-                buf.Save(ms,ImageFormat.Bmp);
-                byte[] bitMapData = ms.ToArray();*/
-                current_object.Draw(Color.AntiqueWhite,Color.AliceBlue, buf, figures);
+                OffOn = true;
+                
+                /*current_object.Draw(Color.AntiqueWhite,Color.AliceBlue, buf, figures);
                 MemoryStream ms2 = new MemoryStream(current_object.Buffer_Main);
                 Image retBuf = Bitmap.FromStream(ms2);
-                canvas.DrawImageUnscaled(retBuf,0,0,buf.Width,buf.Height);
-                /*
-                byte[] Result;
-                BitmapData bData = buf.LockBits(new Rectangle(new Point(), buf.Size), ImageLockMode.ReadOnly, buf.PixelFormat);
-                int ByteCount = bData.Stride * buf.Height;
-                Result = new byte[ByteCount];
-                Marshal.Copy(bData.Scan0, Result, 0, ByteCount);
-                buf.UnlockBits(bData);
-                current_object.Buffer_Main = Result;
-                if (current_object.Figure_Name == "Rectangle")
+                canvas.DrawImageUnscaled(retBuf,0,0,buf.Width,buf.Height);*/
+                            
+            }
+        }
+
+        private void draw_panel_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (current_object != null)
+            {
+               /* Point temp = current_object.Last_point;
+                temp.X = e.X;
+                temp.Y = e.Y;
+                //current_object.Last_point.X = e.X;
+                //current_object.Last_point.Y = e.Y;
+                current_object.Last_point = temp;*/
+                current_object.Last_point = new Point(e.X,e.Y);
+                if (OffOn)
+                {
                     current_object.Draw(figure_color, canvas_color, buf, figures);
-                canvas.DrawImageUnscaled(buf, 0, 0, draw_panel.Width, draw_panel.Height);  */              
+                    MemoryStream ms2 = new MemoryStream(current_object.Buffer_Main);
+                    Image retBuf = Bitmap.FromStream(ms2);
+                    canvas.DrawImageUnscaled(retBuf, 0, 0, buf.Width, buf.Height);
+                }
+            }
+        }
+
+        private void draw_panel_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (current_object != null)
+            {
+                OffOn = false;
+                current_object.Draw(figure_color, canvas_color, buf, figures);
+                MemoryStream ms2 = new MemoryStream(current_object.Buffer_Main);
+                Image retBuf = Bitmap.FromStream(ms2);
+                canvas.DrawImageUnscaled(retBuf, 0, 0, buf.Width, buf.Height);
+                // current_object.Draw(figure_color, canvas_color,  buf,figures);
+                //all_figures.Add(new figure_frame(current_figure_id,current_object.First_point,current_object.Last_point));
+                figures.Add(current_object);
+                current_object = null;
             }
         }
 
@@ -122,33 +145,6 @@ namespace GraphicEditor
             }
 
             return result;
-        }
-
-        private void draw_panel_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (current_object != null)
-            {
-                Point temp = current_object.Last_point;
-                temp.X = e.X;
-                temp.Y = e.Y;
-                //current_object.Last_point.X = e.X;
-                //current_object.Last_point.Y = e.Y;
-                current_object.Last_point = temp;
-                //if (OffOn)
-                    //current_object.Draw(figure_color,canvas_color, buf, figures);
-            }
-        }
-
-        private void draw_panel_MouseUp(object sender, MouseEventArgs e)
-        {
-            if (current_object != null)
-            {
-                OffOn = false;
-               // current_object.Draw(figure_color, canvas_color,  buf,figures);
-                //all_figures.Add(new figure_frame(current_figure_id,current_object.First_point,current_object.Last_point));
-                figures.Add(current_object);
-                current_object = null; 
-            }
         }
 
         private IFigures CreateInstance(int index)
