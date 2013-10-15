@@ -12,7 +12,6 @@ using Figures;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 
 namespace GraphicEditor
 {
@@ -20,7 +19,6 @@ namespace GraphicEditor
     {
         private IFigures current_object;
         private string current_figure_id = "";
-        private Creator creator;
         private List<figure_frame> all_figures;
         private List<IFigures> figures;
         private Color figure_color;
@@ -39,10 +37,10 @@ namespace GraphicEditor
         public enum FigureID { line, rectangle, triangle, ellipse, fillellipse };
         private struct figure_frame
         {
-            public string Id;
+            public int Id;
             public Point First_Point;
             public Point Last_Point;
-            public figure_frame(string id, Point first_point, Point last_point)
+            public figure_frame(int id, Point first_point, Point last_point)
             {
                 Id = id;
                 First_Point = first_point;
@@ -59,7 +57,6 @@ namespace GraphicEditor
             new_all_figures = new List<string>();
             figure_color = Color.Red;
             canvas_color = draw_panel.BackColor;
-            creator = new Creator();
             OffOn = false; 
             DoubleBuffered = true;
             buf = new Bitmap(draw_panel.Width, draw_panel.Height);
@@ -76,12 +73,6 @@ namespace GraphicEditor
             
         }
 
-        private void pb_line_Click(object sender, EventArgs e)
-        {
-            //current_figure_id = FigureID.line;
-            //current_object = creator.CreateFigure(draw_panel,current_figure_id);
-        }
-
         private void draw_panel_MouseDown(object sender, MouseEventArgs e)
         {
             if (cb_figure.Text != "")
@@ -91,8 +82,6 @@ namespace GraphicEditor
                 if (current_object == null)
                     current_object = CreateInstance(GetFigureIndex(current_figure_id));
                 current_object.First_point = new Point(e.X, e.Y);
-                current_object.Widht = draw_panel.Width;
-                current_object.Height = draw_panel.Height;
                 OffOn = true;                            
             }
         }
@@ -131,6 +120,7 @@ namespace GraphicEditor
                 canvas.DrawImageUnscaled(retBuf, 0, 0, buf.Width, buf.Height);
 
                 figures.Add(current_object);
+                all_figures.Add(new figure_frame(GetFigureIndex(current_object.Figure_Name), current_object.First_point, current_object.Last_point));
                 current_object = null;
             }
         }
@@ -166,8 +156,6 @@ namespace GraphicEditor
                 foreach (IFigures figure in figures)
                 {
                     cb_figure.Items.Add(figure.Figure_Name);
-                    //new_all_figures.Add(figure);
-                    //richTextBox1.Text += " " + figure.ToString();
                 }
 
             }
@@ -247,11 +235,6 @@ namespace GraphicEditor
             GC.Collect(2);
         }
 
-        private void pb_rectangle_Click(object sender, EventArgs e)
-        {
-            //current_figure_id = FigureID.rectangle;
-            //current_object = creator.CreateFigure(draw_panel,current_figure_id);
-        }
 
         private void sm_item_create_Click(object sender, EventArgs e)
         {
@@ -261,7 +244,7 @@ namespace GraphicEditor
         private void sm_item_oen_Click(object sender, EventArgs e)
         {
             draw_panel.Visible = true;
-            figure_frame figure = new figure_frame("",new Point(0,0),new Point(0,0));
+            figure_frame figure = new figure_frame(0,new Point(0,0),new Point(0,0));
             byte[] rawdatas = new byte[Marshal.SizeOf(figure)];
             Stream file_stream;
             IntPtr pnt;
@@ -271,20 +254,35 @@ namespace GraphicEditor
                 {
                     figures.Clear();
                     all_figures.Clear();
+                    gbuf = Graphics.FromImage(buf);
+                    gbuf.Clear(canvas_color);
+                    MemoryStream ms = new MemoryStream();
+                    buf.Save(ms, ImageFormat.Bmp);
+                    bufByte = ms.ToArray();
+
                     while (file_stream.Read(rawdatas, 0, Marshal.SizeOf(figure)) != 0)//защита от повреждений
                     {
-                        pnt = Marshal.AllocHGlobal(Marshal.SizeOf(figure));
-                        Marshal.Copy(rawdatas, 0, pnt, Marshal.SizeOf(figure));
+                        pnt = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(figure_frame)));
+                        Marshal.Copy(rawdatas, 0, pnt, rawdatas.Length);
                         figure = (figure_frame)Marshal.PtrToStructure(pnt, typeof(figure_frame));
                         Marshal.FreeHGlobal(pnt);
-                        //current_object = creator.CreateFigure(draw_panel, figure.Id);
+                        
+                        current_object = CreateInstance(figure.Id);
+                        //current_object.Figure_Name = figure.Id;
                         current_object.First_point = figure.First_Point;
-                        current_object.Last_point = figure.Last_Point;                        
-                        current_object.Draw(figure_color, canvas_color, bufByte, figures);
+                        current_object.Last_point = figure.Last_Point;
+
+                        bufByte = current_object.Draw(figure_color, canvas_color, bufByte, figures);
+                        
+
                         figures.Add(current_object);
-                        all_figures.Add(new figure_frame(figure.Id, current_object.First_point, current_object.Last_point));
+                        all_figures.Add(new figure_frame(GetFigureIndex(current_object.Figure_Name), current_object.First_point, current_object.Last_point));
                         current_object = null;
                     }
+                    MemoryStream ms2 = new MemoryStream(bufByte);
+                    Image retBuf = Bitmap.FromStream(ms2);
+                    canvas.DrawImageUnscaled(retBuf, 0, 0, buf.Width, buf.Height);
+                    file_stream.Close();
                 }
             }
 
@@ -292,7 +290,7 @@ namespace GraphicEditor
 
         private void sm_item_save_Click(object sender, EventArgs e)
         {
-            figure_frame fig = new figure_frame("", new Point(0, 0), new Point(0, 0));
+            figure_frame fig = new figure_frame(0, new Point(0, 0), new Point(0, 0));
             byte[] rawdatas = new byte[Marshal.SizeOf(fig) * all_figures.Count];
             int count = 0;
             if (save_file.ShowDialog() == DialogResult.OK)
@@ -302,9 +300,9 @@ namespace GraphicEditor
                 {
                     foreach (figure_frame figure in all_figures)
                     {
-                        IntPtr pnt = Marshal.AllocHGlobal(Marshal.SizeOf(figure));
+                        IntPtr pnt = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(figure_frame)));
                         Marshal.StructureToPtr(figure, pnt, false);
-                        Marshal.Copy(pnt, rawdatas, count, Marshal.SizeOf(figure));
+                        Marshal.Copy(pnt, rawdatas, count, Marshal.SizeOf(typeof(figure_frame)));
                         Marshal.FreeHGlobal(pnt);
                         count += Marshal.SizeOf(figure);
                     }
@@ -315,17 +313,6 @@ namespace GraphicEditor
 
         }
 
-        private void pb_triangle_Click(object sender, EventArgs e)
-        {
-            //current_figure_id = FigureID.triangle;
-            //current_object = creator.CreateFigure(draw_panel, current_figure_id);
-        }
-
-        private void pb_ellipse_Click(object sender, EventArgs e)
-        {
-            //current_figure_id = FigureID.ellipse;
-            //current_object = creator.CreateFigure(draw_panel, current_figure_id);
-        }
 
         private void pb_eraser_Click(object sender, EventArgs e)
         {
@@ -344,11 +331,6 @@ namespace GraphicEditor
                 figure_color = col_dialog.Color;
         }
 
-        private void pb_fillellipse_Click(object sender, EventArgs e)
-        {
-            //current_figure_id = FigureID.fillellipse;
-            //current_object = creator.CreateFigure(draw_panel, current_figure_id);
-        }
 
         
     }
